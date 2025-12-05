@@ -46,7 +46,7 @@ tab_chat, tab_manual = st.tabs([
 # ABA 1: CHATBOT COM LLM
 # ==============================================================================
 with tab_chat:
-    st.header("Sabatina com a IA")
+    st.header("Chatbot do Projeto")
     st.markdown("Utilize este chat para questionar sobre a metodologia, métricas e visualizar os gráficos de avaliação do projeto.")
 
     # Container para o histórico
@@ -69,14 +69,11 @@ with tab_chat:
 
     # Input do usuário
     with st.form(key="chat_form", clear_on_submit=True):
-        col_input, col_btn = st.columns([6, 1])
-        with col_input:
-            user_prompt = st.text_input("Pergunta:", placeholder="Ex: Qual a diferença de erro entre Mamdani e Sugeno?")
-        with col_btn:
-            submit_button = st.form_submit_button("Enviar")
+        user_prompt = st.text_input("Faça sua pergunta:", placeholder="Ex: Qual a diferença de erro entre Mamdani e Sugeno?")
+        submit_button = st.form_submit_button("Enviar")
 
     if submit_button and user_prompt:
-        with st.spinner("Consultando contexto e gerando resposta..."):
+        with st.spinner("Analisando sua pergunta e buscando gráficos..."):
             try:
                 api_text, api_images = chat.run_ai(user_prompt)
                 
@@ -85,9 +82,15 @@ with tab_chat:
                     "answer": api_text,
                     "images": api_images
                 })
-                st.rerun()
             except Exception as e:
-                st.error(f"Erro na comunicação com a IA: {e}")
+                error_message = f"Ocorreu um erro ao processar sua pergunta: {e}"
+                st.session_state.chat_history.append({
+                    "question": user_prompt,
+                    "answer": error_message,
+                    "images": []
+                })
+        st.rerun()
+
 
 # ==============================================================================
 # ABA 2: PAINEL MANUAL (SIMULADOR FUZZY)
