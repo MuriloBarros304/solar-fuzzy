@@ -8,8 +8,8 @@ IMAGE_MAP = {
     "comparação": "predict/series_temporal_ghi.png",
     "dispersão": "predict/scatter_real_vs_predito.png",
     "barras": "predict/barras_metricas.png",
-    "inputs": "fuzzy_inputs.png",
-    "saída": "fuzzy_output.png"
+    "inputs": "predict/fuzzy_inputs.png",
+    "saída": "predict/fuzzy_output.png"
 }
 
 def load_context():
