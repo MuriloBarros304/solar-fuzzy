@@ -1,214 +1,92 @@
-INÍCIO DO CONTEXTO DO PROJETO
+INÍCIO DO CONTEXTO DO PROJETO - SISTEMAS FUZZY VS ML
 
-Este é um projeto de chatbot para um dashboard de previsão de irradiação solar no RN. Em uma tab deste dashboard está disponível este chat para mais informações ao usuário. O dashboard permite ao usuário selecionar um local no mapa interativo e ver predições (importante usar a palavra "predição", não "previsão") pontuais, diárias, mensais e anuais.
+Este é um projeto de chatbot integrado a um dashboard de previsão de irradiação solar no Rio Grande do Norte. O foco central desta etapa é a implementação e comparação de sistemas de Lógica Fuzzy (Mamdani e Sugeno) contra um modelo de referência (Benchmark) de Machine Learning (XGBoost).
 
 Sobre o Projeto
+O objetivo é prever a Irradiação Global Horizontal (GHI) baseando-se em variáveis climáticas e temporais. Enquanto o modelo de ML busca minimizar o erro estatístico matematicamente, os modelos Fuzzy buscam replicar o raciocínio humano de um especialista em meteorologia.
 
-O objetivo é prever a Irradiação Global Horizontal (GHI) e a Irradiação Normal Direta (DNI) usando modelos de machine learning.
+Dados e Features
+Os dados originais provêm da integração entre estações terrestres (INMET) e dados de satélite (NSRDB), totalizando mais de 260.000 registros.
+Diferença crucial de abordagem:
+- O modelo ML (XGBoost) utiliza 12 features, capturando correlações complexas e não lineares.
+- Os modelos Fuzzy utilizam apenas 4 variáveis de entrada (as mais significativas para o modelo de ML), simulando a limitação cognitiva humana em processar muitas variáveis simultaneamente.
 
-Dados
-Foram utilizados dados da NSRDB (targets) e do INMET (features). Haviam dados faltantes nas features, por problemas nos sensores, assim os dados da NSRDB entraram para suprir os dados nulos. Os timestamps foram "casados" para a montagem de um único dataset, com tanto as features quanto os targets.
+Variáveis do Sistema Fuzzy (Inputs):
+Foram escolhidas as quatro features com maior importância no projeto de ML
+1. hora_cos (Elevação Solar): Representa a posição do sol. Vai de -1 (Zênite/Meio-dia) a 1 (Noite).
+2. hora_sin (Ciclo Diário): Diferencia Manhã (valores positivos) de Tarde (valores negativos).
+3. tipo_nuvem: Grau de cobertura de nuvens (0 a 10).
+4. temp_ar: Temperatura do ar (°C), usada para inferir eficiência térmica.
 
-NSRDB:
-- Pressão atmosférica (mB)
-- Temperatura (°C)
-- Umidade relativa (%)
-- Tipo da nuvem
-- Timestamp
-- Latitude e longitude
-- DHI, DNI e GHI (w/m²)
+Variável de Saída (Output):
+- GHI (Global Horizontal Irradiance): Medida em W/m², classificada de "Zero" a "Extremo".
 
-INMET:
-- Radiação global (Kj/m²)
-- Precipitação total (mm)
-- Rajada máxima de vento (m/s)
-- Umidade relativa mínima na hora anterior (%)
-- Umidade relativa máxima na hora anterior (%)
-- Pressão atmosférica mínima na hora anterior (mB)
-- Pressão atmosférica máxima na hora anterior (mB)
-- Temperatura mínima na hora anterior (°C)
-- Temperatura máxima na hora anterior (°C)
-- Umidade relativa do ar (%)
-- Velocidade do vento (m/s)
-- Direção do vento (° (graus))
-- Pressão atmosférica ao nível da estação (mB)
-- Temperatura do ar (°C)
-- Timestamp
+Metodologia Fuzzy
+Foram desenvolvidos dois controladores:
+1. Mamdani: Utiliza funções de pertinência na saída (Triangulares/Trapezoidais) e defuzzificação por Centroide. Foca na suavidade da transição entre estados.
+2. Sugeno: Utiliza constantes (singletons) ou funções lineares na saída. Foca na eficiência computacional e precisão pontual.
+Equações no formato:
+    y = w1*x1 + w2*x2 + w3*x3 + w4*x4 + b
+    onde x1, x2, x3 e x4 são as entradas: [hora_sin, hora_cos, tipo_nuvem, temp_ar]
+    b é o bias (intercepto)
+    W são os pesos para cada entrada definidos pelas regras e funções de pertinência
 
-Totalizando 262752 linhas após o tratamento dos dados
-Algumas features foram retiradas do dataset pois tinham dependência linear com outras features e/ou com targets, ou simplesmente não eram úteis, como no caso do código de estação. A feature mais importante para todos os modelos é hora_cos, que fica com proporcionalidade negativa com os targets, pois são cosenóides centralizadas em 12h, o inverso da irradiação solar. GHI e DNI possuem correlação matemática, mas isso entre targets em árvores de decisão (RF/XGB) é inofensiva, pois as estruturas de decisão baseadas nas features climáticas tendem a explicar a variação de ambas as irradiâncias simultaneamente.
+Regras (Conhecimento Especialista)
+O sistema possui 19 regras que cobrem o espaço de decisão. Exemplos da lógica aplicada:
+- Regras de Bloqueio: Se é noite OU se o céu está encoberto com sol baixo -> GHI é Zero.
+- Regras de Pico: Se Sol no Zênite + Céu Limpo + Temp Confortável -> GHI é Extremo.
+- Regras de Atenuação: Nuvens parciais ou temperaturas muito altas (que reduzem a eficiência) rebaixam a classificação do GHI (de Extremo para Muito Alto ou Alto).
+- Assimetria Manhã/Tarde: Devido à turbidez atmosférica, manhãs limpas tendem a ter mais irradiação que tardes limpas.
 
-Features:
- 0   codigo_estacao (retirada para treinamento)
- 1   latitude_inmet
- 2   longitude_inmet
- 3   temp_ar
- 4   umidade_rel
- 5   pressao_atm_estacao
- 6   vento_vel
- 7   vento_dir
- 8   precipitacao
- 9   ghi
- 10  dni
- 11  dhi (retirada para treinamento)
- 12  tipo_nuvem
- 13  hora_sin
- 14  hora_cos
- 15  dia_ano_sin
- 16  dia_ano_cos
+Regra 1: IF hora_cos[noite] THEN ghi[zero]
+Regra 2: IF hora_cos[baixo] AND tipo_nuvem[encoberto] THEN ghi[zero]
+Regra 3: IF (hora_cos[zenite] AND tipo_nuvem[limpo]) AND temp_ar[conforto] THEN ghi[extremo]
+Regra 4: IF (hora_cos[zenite] AND tipo_nuvem[limpo]) AND temp_ar[quente] THEN ghi[muito_alto]
+Regra 5: IF (hora_cos[zenite] AND tipo_nuvem[parcial]) AND temp_ar[conforto] THEN ghi[alto]
+Regra 6: IF (hora_cos[zenite] AND tipo_nuvem[parcial]) AND temp_ar[quente] THEN ghi[medio]
+Regra 7: IF (hora_cos[zenite] AND tipo_nuvem[encoberto]) AND temp_ar[conforto] THEN ghi[baixo]
+Regra 8: IF (hora_cos[zenite] AND tipo_nuvem[encoberto]) AND temp_ar[quente] THEN ghi[muito_baixo]
+Regra 9: IF ((hora_cos[alto] AND hora_sin[manha]) AND tipo_nuvem[limpo]) AND temp_ar[conforto] THEN ghi[muito_alto]
+Regra 10: IF ((hora_cos[alto] AND hora_sin[manha]) AND tipo_nuvem[limpo]) AND temp_ar[quente] THEN ghi[alto]
+Regra 11: IF ((hora_cos[alto] AND hora_sin[manha]) AND tipo_nuvem[parcial]) AND temp_ar[conforto] THEN ghi[medio]
+Regra 12: IF ((hora_cos[alto] AND hora_sin[manha]) AND tipo_nuvem[parcial]) AND temp_ar[quente] THEN ghi[baixo]
+Regra 13: IF ((hora_cos[alto] AND hora_sin[tarde]) AND tipo_nuvem[limpo]) AND temp_ar[conforto] THEN ghi[alto]
+Regra 14: IF ((hora_cos[alto] AND hora_sin[tarde]) AND tipo_nuvem[limpo]) AND temp_ar[quente] THEN ghi[medio]
+Regra 15: IF ((hora_cos[alto] AND hora_sin[tarde]) AND tipo_nuvem[parcial]) AND temp_ar[conforto] THEN ghi[baixo]
+Regra 16: IF ((hora_cos[alto] AND hora_sin[tarde]) AND tipo_nuvem[parcial]) AND temp_ar[quente] THEN ghi[muito_baixo]
+Regra 17: IF hora_cos[alto] AND tipo_nuvem[encoberto] THEN ghi[muito_baixo]
+Regra 18: IF (hora_cos[baixo] AND hora_sin[manha]) AND (tipo_nuvem[limpo] OR tipo_nuvem[parcial]) THEN ghi[baixo]
+Regra 19: IF (hora_cos[baixo] AND hora_sin[tarde]) AND (tipo_nuvem[limpo] OR tipo_nuvem[parcial]) THEN ghi[muito_baixo]
 
-Resumo do tratamento dos dados:
+Resultados e Avaliação Comparativa
 
-Rank Estação % Nulos Internos
-1 Natal 30.17%
-2 Caicó 35.88%
-3 Ipanguaçu 38.53%
-4 Apodi 40.00%
-5 Macau 42.84%
-6 Mossoró 49.32%
-7 Santa Cruz 52.72%
+1. Machine Learning (XGBoost) - O Benchmark
+    - R²: 0.9186 | RMSE: 86.24 W/m² | MAE: 51.66 W/m²
+    - Análise: O ML tem desempenho superior pois treina com 12 variáveis e ajusta pesos matematicamente, capturando nuances que regras manuais não conseguem.
 
-Foram incluídas as 4 estações com menos nulos: Natal, Caicó, Ipanguaçu e Apodi.
+2. Fuzzy Mamdani
+    - R²: 0.6229 | RMSE: 185.65 W/m² | MAE: 152.48 W/m²
+    - Análise: Teve o melhor desempenho entre os sistemas Fuzzy. A defuzzificação por centroide permitiu uma "interpolação" suave entre as regras, lidando melhor com a variabilidade natural da irradiação solar e ruídos nos dados.
 
-1. Padronização dos dados do INMET
+3. Fuzzy Sugeno
+    - R²: 0.5347 | RMSE: 206.22 W/m² | MAE: 169.07 W/m²
+    - Análise: Teve desempenho inferior ao Mamdani. A rigidez dos outputs (constantes/singletons) penalizou o modelo em momentos de transição de nuvens, onde o "meio termo" calculado pelo Mamdani se provou mais assertivo que os valores fixos do Sugeno.
 
-Os arquivos brutos de diferentes estações meteorológicas foram lidos e padronizados.
-Eles possuem formatos heterogêneos, então foram aplicadas correções nos nomes das colunas, conversões de tipos e normalização de unidades.
-O horário é reformatado para permitir a criação de um timestamp completo e consistente.
-Cada estação recebe suas coordenadas geográficas e apenas as variáveis relevantes foram preservadas.
-Após isso, todas as estações foram unificadas em um único conjunto contínuo de dados.
 
-2. Padronização dos dados da NSRDB
 
-Os arquivos anuais foram reunidos para cada estação e depois combinados entre si.
-As variáveis do NSRDB, que possuem nomes próprios, foram renomeadas para um padrão comum.
-É criado um índice temporal a partir da data e hora fornecidas pelo dataset.
-Apenas as variáveis essenciais para modelagem e comparação foram mantidas, e as coordenadas também foram adicionadas.
+Conclusão Geral
+O Machine Learning é ideal para precisão numérica bruta. A Lógica Fuzzy provou-se útil para explicar o fenômeno ("White Box") e gerar estimativas razoáveis usando apenas 4 variáveis, mas sofreu com a complexidade estocástica da formação de nuvens, que é difícil de mapear totalmente em apenas 19 regras.
 
-3. Tratamento de anomalias e qualidade do dado
+Instruções para a IA (Visualização de Gráficos)
+Se o usuário perguntar sobre os assuntos abaixo, mencione EXATAMENTE as palavras-chave entre aspas para exibir as imagens correspondentes salvas na pasta 'predict/':
 
-Durante o período diurno, valores de irradiação fisicamente impossíveis (ou quase nulos) foram identificados e removidos.
-Essas falhas ou anomalias foram corrigidas por interpolação temporal, restaurando a continuidade da série sem inserir saltos abruptos.
+- "comparação": Para mostrar o gráfico de Série Temporal (GHI Real vs Estimados). Útil para ver como as curvas se comportam ao longo do dia.
+- "dispersão": Para mostrar o Scatter Plot (Real vs Predito). Útil para ver onde os modelos erram mais (os "fantasmas" no gráfico).
+- "barras": Para mostrar o gráfico de barras comparando RMSE, MAE e R² dos três modelos.
+- "entradas": Para mostrar as funções de pertinência das variáveis de entrada (Inputs Fuzzy).
+- "saída": Para mostrar as funções de pertinência da saída do Mamdani.
 
-4. Integração entre INMET e NSRDB
-
-Os dois conjuntos, agora padronizados e com timestamps consistentes, foram combinados em um DataFrame único utilizando apenas os horários em que ambos possuem dados válidos.
-Isso garante alinhamento perfeito entre variáveis meteorológicas reais e variáveis radiométricas fornecidas pela NSRDB.
-
-5. Criação de variáveis derivadas
-
-Foram adicionadas variáveis de representação temporal, como ciclos diários e sazonais, através de funções periódicas que descrevem o horário e o dia do ano.
-Essas variáveis ajudam modelos de aprendizado a capturar padrões naturais da radiação solar.
-
-6. Filtragem final e organização
-
-Colunas redundantes ou irrelevantes foram removidas.
-O DataFrame final contém apenas os atributos necessários para análise, modelagem e inferência.
-Após isso, o conjunto é dividido em períodos representativos para treino, validação e teste.
-
-Modelos
-
-Random Forest: Um modelo foi treinado e seu gráfico de importância de features está em 'importância rf'.
-Métricas de desempenho RF Regressor:
-GHI
-  - MAE: 19.27 W/m²
-  - RMSE: 46.37 W/m²
-  - R²: 0.9824
-DNI
-  - MAE: 38.83 W/m²
-  - RMSE: 81.62 W/m²
-  - R²: 0.9412
-
-XGBoost: Outro modelo foi treinado e seu gráfico de importância está em 'importância xg'. Uma imagem contendo a regressão do dia 01/12/2023 comparada com os dados reais usando este modelo está disponível em "predicão diária xg", mas datas e locais personalizados podem ser inferidos nas abas do dashboard Streamlit, todas as aplicações estão usando XGBoost. Este modelo não suporta mais de um target nativamente, por isso há duas instâncias de XG neste projeto, uma para cada target.
-Métricas de desempenho XGBoost:
-GHI
-  - MAE: 19.37 W/m²
-  - RMSE: 43.45 W/m²
-  - R²: 0.9837
-DNI
-  - MAE: 39.46 W/m²
-  - RMSE: 76.98 W/m²
-  - R²: 0.9456
-
-Treinamento:
-O treinamento foi focado em minimizar o erro do GHI, que é mais útil, pois representa a irradiação global. Foram feitas Random Searchs com o RandomizedSearchCV e validação cruzada de 3 folds para buscar os melhores hiperparâmetros possíveis nos dois modelos.
-
-Treino: 2018 a 2022, 175200 linhas (71.4%)
-Validação: 2023, 35040 linhas (14.3%)
-Teste: 2024, 35136 linhas (14.3%)
-12 features, 2 targets
-
-Hiperparâmetros:
-RF(
-    n_estimators=355,
-    n_jobs=-1,
-    random_state=42,
-    verbose=2,
-    max_depth=21,
-    max_features=0.82,
-    max_samples=0.87,
-    min_samples_split=2,
-    min_samples_leaf=1
-)
-XGB (GHI) (
-    n_estimators=800,
-    learning_rate=0.05,
-    n_jobs=-1,
-    random_state=42,
-    early_stopping_rounds=50,
-    max_depth=9,
-    subsample=0.9,
-    colsample_bytree=0.93
-)
-
-XGB (DNI) (
-    n_estimators=859,
-    learning_rate=0.01,
-    n_jobs=-1,
-    random_state=42,
-    early_stopping_rounds=50,
-    max_depth=7,
-    subsample=0.844,
-    gamma=0.469,
-    colsample_bytree=0.889
-)
-
-Fórmulas úteis:
-hora_cos = cos(2 * pi * hora / 24)
-hora_sin = sin(2 * pi * hora / 24)
-dia_ano_cos = cos(2 * pi * dia_do_ano / 365.25)
-dia_ano_sin = sin(2 * pi * dia_do_ano / 365.25)
-GHI (Global Horizontal Irradiance)
-DNI (Direct Normal Irradiance)
-DHI (Diffuse Normal Irradiance)
-GHI = DNI*cos(θ) + DHI
-
-Análise
-
-O modelo XGBoost se mostrou ter melhor desempenho, com pouquíssima diferença, mas seu custo computacional extremamente menor que o Random Forest Regressor faz com que ele seja o modelo mais adequado para esta aplicação.
-
-Sobre a página
-
-Com isso, nesta plataforma feita via Streamlit, está disponível a realização de inferências do modelo vencedor (XGBoost) de diversas formas, o usuário pode escolher um local no mapa do RN para realizar a predição de irradiação solar de um horário pontual, de um dia ou de um ano.
-
-Outros Gráficos Disponíveis
-
-Comparação Temporal: O arquivo 'comparação' mostra a comparação entre os valores reais e preditos ao longo do tempo.
-
-Análise de Erro: O arquivo 'dispersão' mostra um gráfico de dispersão do real vs. predito, útil para ver o erro do modelo.
-
-Instruções para a IA
-
-Cada palavra indicando o nome de um arquivo deve ser mencionada para ser exibida ao usuário à medida que forem solicitadas informações em que as imagens sejam úteis. No total são 5:
-    # Palavras-chave genéricas
-    "comparação"
-    "dispersão"
-    
-    # Palavras-chave específicas do modelo
-    "importância rf"
-    "importância xg"
-    "predição diária xg"
-
-Responda de forma concisa. Se o usuário perguntar sobre o "erro", mencione "dispersão". Se perguntar sobre "desempenho ao longo do tempo", mencione "comparação". Se perguntar sobre "quais features são importantes", mencione "importância" e o nome do modelo. Se você já exibiu um gráfico, evite exibir novamente, pois o histórico fica disponível para o usuário, assim ficará repetido caso seja mencionado um gráfico mais de uma vez.
+Se o usuário perguntar "Por que o ML é melhor?", explique sobre a quantidade de features e o treinamento estatístico.
+Se perguntar "Mamdani vs Sugeno", explique sobre a suavidade do centroide vs a rigidez do Sugeno.
 
 FIM DO CONTEXTO

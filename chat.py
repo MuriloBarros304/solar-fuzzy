@@ -4,14 +4,12 @@ import os
 import re
 
 IMAGE_MAP = {
-    # Palavras-chave genéricas
-    "comparação": "predict/comparacao_series_temporais.png",
-    "dispersão": "predict/analise_dispersao_erro.png",
-    
-    # Palavras-chave específicas do modelo
-    "importância rf": "predict/feature_importance_randomforest.png",
-    "importância xg": "predict/feature_importance_xgboost_(ghi_model).png",
-    "predição diária xg": "predict/predicao_diaria_xg.png"
+
+    "comparação": "predict/series_temporal_ghi.png",
+    "dispersão": "predict/scatter_real_vs_predito.png",
+    "barras": "predict/barras_metricas.png",
+    "inputs": "fuzzy_inputs.png",
+    "saída": "fuzzy_output.png"
 }
 
 def load_context():

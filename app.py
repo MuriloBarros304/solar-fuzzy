@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import chat
@@ -151,61 +150,3 @@ with tab_manual:
             st.warning("Alta divergência entre modelos!")
         else:
             st.caption("Modelos concordantes.")
-
-    # --- 4. Visualização Gráfica ---
-    st.markdown("### 3. Detalhes Visuais")
-    
-    exp_graphs = st.expander("Ver Funções de Pertinência (Inputs e Outputs)", expanded=False)
-    with exp_graphs:
-        tab_inputs, tab_out_mamdani = st.tabs(["Variáveis de Entrada", "Output Mamdani"])
-        
-        with tab_inputs:
-            c1, c2 = st.columns(2)
-            with c1:
-                st.pyplot(plot_variable(ghi_mamdani.hora_cos, h_cos, "Hora Cosseno"))
-                st.pyplot(plot_variable(ghi_mamdani.tipo_nuvem, nuvem, "Tipo de Nuvem"))
-            with c2:
-                st.pyplot(plot_variable(ghi_mamdani.hora_sin, h_sin, "Hora Seno"))
-                st.pyplot(plot_variable(ghi_mamdani.temp_ar, temp, "Temperatura"))
-        
-        with tab_out_mamdani:
-            st.markdown("Visualização da área ativada no método Mamdani:")
-            # Para visualizar o output ativado, precisamos acessar o objeto simulador dentro do módulo
-            try:
-                fig_out, ax_out = plt.subplots(figsize=(8, 4))
-                ghi_mamdani.ghi.view(sim=ghi_mamdani.simulador, ax=ax_out)
-                st.pyplot(fig_out)
-            except Exception:
-                st.caption("Execute uma simulação primeiro para ver a área ativada.")
-
-    # --- 5. Relatórios Estáticos (Pasta Predict) ---
-    st.markdown("---")
-    st.markdown("### 4. Avaliação Global (Dados de Teste)")
-    
-    exp_static = st.expander("📂 Abrir Galeria de Gráficos de Validação", expanded=True)
-    with exp_static:
-        cols = st.columns(3)
-        
-        # Mapeamento de imagens disponíveis na pasta predict
-        imagens_predict = {
-            "Dispersão (Real vs Predito)": "predict/scatter_real_vs_predito.png",
-            "Série Temporal": "predict/series_temporal_ghi.png",
-            "Inputs Fuzzy": "predict/fuzzy_inputs.png",
-            "Output Fuzzy": "predict/fuzzy_output.png"
-        }
-        
-        idx = 0
-        for titulo, caminho in imagens_predict.items():
-            with cols[idx % 3]:
-                if os.path.exists(caminho):
-                    st.image(caminho, caption=titulo, use_container_width=True)
-                else:
-                    st.info(f"Gráfico '{titulo}' aguardando geração.")
-            idx += 1
-        
-        # Leitura do CSV de resultados comparativos se existir
-        csv_path = "predict/resultados_comparativos.csv"
-        if os.path.exists(csv_path):
-            st.markdown("#### Tabela de Métricas")
-            df_metrics = pd.read_csv(csv_path)
-            st.dataframe(df_metrics, hide_index=True)
