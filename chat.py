@@ -11,8 +11,8 @@ IMAGE_MAP = {
     "inputs": "predict/fuzzy_inputs.png",
     "saída": "predict/fuzzy_output.png",
     "mapeamento": [
-        "predict/surface_mamdani_hora_cos_vs_tipo_nuvem.png",
-        "predict/surface_sugeno_hora_cos_vs_tipo_nuvem.png",
+        "predict/surface_mamdani_tipo_nuvem_vs_hora_cos.png",
+        "predict/surface_sugeno_tipo_nuvem_vs_hora_cos.png",
         "predict/surface_mamdani_hora_sin_vs_hora_cos.png",
         "predict/surface_sugeno_hora_sin_vs_hora_cos.png"
     ]

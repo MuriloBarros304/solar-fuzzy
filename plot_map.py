@@ -102,18 +102,18 @@ if __name__ == "__main__":
     # Fixamos Temperatura em 25°C e Hora Seno em 0 (Meio-dia/Indiferente)
     gerar_superficie(
         tipo_modelo='mamdani',
-        x_nome='hora_cos', x_range=[-1, 1],
-        y_nome='tipo_nuvem', y_range=[0, 10],
+        x_nome='tipo_nuvem', x_range=[0, 10],
+        y_nome='hora_cos', y_range=[-1, 1],
         fixos={'temp_ar': 25, 'hora_sin': 0},
-        titulo="Impacto da Elevação Solar e Nuvens"
+        titulo="Impacto da Elevação Solar e Nuvens (Fixos: Temp=25°C, Hora_sin=0)"
     )
 
     gerar_superficie(
         tipo_modelo='sugeno',
-        x_nome='hora_cos', x_range=[-1, 1],
-        y_nome='tipo_nuvem', y_range=[0, 10],
+        x_nome='tipo_nuvem', x_range=[0, 10],
+        y_nome='hora_cos', y_range=[-1, 1],
         fixos={'temp_ar': 25, 'hora_sin': 0},
-        titulo="Impacto da Elevação Solar e Nuvens"
+        titulo="Impacto da Elevação Solar e Nuvens (Fixos: Temp=25°C, Hora_sin=0)"
     )
 
     # CENÁRIO B: Ciclo Diário (hora_sin) vs Elevação (hora_cos) -> A "Banheira" do Sol
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         x_nome='hora_sin', x_range=[-1, 1],
         y_nome='hora_cos', y_range=[-1, 1],
         fixos={'tipo_nuvem': 0, 'temp_ar': 25},
-        titulo="Ciclo Diário em Céu Limpo"
+        titulo="Ciclo Diário em Céu Limpo (Fixos: Nuvens=0, Temp=25°C)"
     )
     
     gerar_superficie(
@@ -131,5 +131,5 @@ if __name__ == "__main__":
         x_nome='hora_sin', x_range=[-1, 1],
         y_nome='hora_cos', y_range=[-1, 1],
         fixos={'tipo_nuvem': 0, 'temp_ar': 25},
-        titulo="Ciclo Diário em Céu Limpo"
+        titulo="Ciclo Diário em Céu Limpo (Fixos: Nuvens=0, Temp=25°C)"
     )
