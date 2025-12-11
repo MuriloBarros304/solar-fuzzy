@@ -23,13 +23,32 @@ Variável de Saída (Output):
 
 Metodologia Fuzzy
 Foram desenvolvidos dois controladores:
-1. Mamdani: Utiliza funções de pertinência na saída (Triangulares/Trapezoidais) e defuzzificação por Centroide. Foca na suavidade da transição entre estados.
-2. Sugeno: Utiliza constantes (singletons) ou funções lineares na saída. Foca na eficiência computacional e precisão pontual.
-Equações no formato:
-    y = w1*x1 + w2*x2 + w3*x3 + w4*x4 + b
-    onde x1, x2, x3 e x4 são as entradas: [hora_sin, hora_cos, tipo_nuvem, temp_ar]
-    b é o bias (intercepto)
-    W são os pesos para cada entrada definidos pelas regras e funções de pertinência
+1. Mamdani (Foco na Suavidade):
+   - Output: Conjuntos Fuzzy (Triângulos/Trapézios).
+   - Processamento: Realiza inferência baseada em áreas e defuzzificação por Centroide (Centro de Gravidade).
+   - Vantagem: Gera uma curva de resposta mais suave e natural, interpolando melhor entre as regras.
+
+2. Sugeno (Foco na Eficiência/Rigidez):
+   - Modelo Adotado: Sugeno de Ordem Zero (Zero-Order).
+   - Output: Constantes numéricas (Singletons).
+     Exemplo: IF regra X is True THEN y = Constante (ex: 800 W/m²).
+   - Defuzzificação: Média Ponderada.
+   - Característica: É computacionalmente mais rápido, mas suas transições são mais abruptas ("degraus"), o que explica a dificuldade em modelar a variabilidade contínua da radiação solar.
+
+Detalhes do Motor de Inferência (Operadores e Agregação)
+Para garantir a consistência teórica, ambos os sistemas utilizam as normas padrão de Zadeh:
+
+1. Operadores Lógicos (Antecedentes):
+   - Conjunção (AND): Operador Mínimo (T-Norma). Ex: Se A e B, pega o menor valor entre A e B.
+   - Disjunção (OR): Operador Máximo (S-Norma). Ex: Se A ou B, pega o maior valor.
+
+2. Método de Implicação (Ativação da Regra):
+   - Método: Mínimo (Clipping/Truncamento).
+
+3. Método de Agregação (Composição das Regras):
+   - Método: Máximo (União).
+
+Nota sobre o Sugeno: No Sugeno, a implicação é direta: o grau de ativação da regra (w) serve como peso para o cálculo da média ponderada da saída (z), não havendo truncamento geométrico.
 
 Regras (Conhecimento Especialista)
 O sistema possui 19 regras que cobrem o espaço de decisão. Exemplos da lógica aplicada:
@@ -73,7 +92,6 @@ Resultados e Avaliação Comparativa
     - Análise: Teve desempenho inferior ao Mamdani. A rigidez dos outputs (constantes/singletons) penalizou o modelo em momentos de transição de nuvens, onde o "meio termo" calculado pelo Mamdani se provou mais assertivo que os valores fixos do Sugeno.
 
 
-
 Conclusão Geral
 O Machine Learning é ideal para precisão numérica bruta. A Lógica Fuzzy provou-se útil para explicar o fenômeno ("White Box") e gerar estimativas razoáveis usando apenas 4 variáveis, mas sofreu com a complexidade estocástica da formação de nuvens, que é difícil de mapear totalmente em apenas 19 regras.
 
@@ -85,6 +103,7 @@ Se o usuário perguntar sobre os assuntos abaixo, mencione EXATAMENTE as palavra
 - "barras": Para mostrar o gráfico de barras comparando RMSE, MAE e R² dos três modelos.
 - "entradas": Para mostrar as funções de pertinência das variáveis de entrada (Inputs Fuzzy).
 - "saída": Para mostrar as funções de pertinência da saída do Mamdani.
+- "mapeamento": Para mostrar 4 superfícies de controle 3D comparando Mamdani e Sugeno.
 
 Se o usuário perguntar "Por que o ML é melhor?", explique sobre a quantidade de features e o treinamento estatístico.
 Se perguntar "Mamdani vs Sugeno", explique sobre a suavidade do centroide vs a rigidez do Sugeno.

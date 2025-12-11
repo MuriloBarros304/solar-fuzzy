@@ -9,7 +9,13 @@ IMAGE_MAP = {
     "dispersão": "predict/scatter_real_vs_predito.png",
     "barras": "predict/barras_metricas.png",
     "inputs": "predict/fuzzy_inputs.png",
-    "saída": "predict/fuzzy_output.png"
+    "saída": "predict/fuzzy_output.png",
+    "mapeamento": [
+        "predict/surface_mamdani_hora_cos_vs_tipo_nuvem.png",
+        "predict/surface_sugeno_hora_cos_vs_tipo_nuvem.png",
+        "predict/surface_mamdani_hora_sin_vs_hora_cos.png",
+        "predict/surface_sugeno_hora_sin_vs_hora_cos.png"
+    ]
 }
 
 def load_context():
@@ -25,15 +31,24 @@ def find_images_in_response(response_text):
     """
     Verifica o texto de resposta por palavras-chave e retorna
     os caminhos das imagens correspondentes.
+    Suporta mapeamento 1-para-1 ou 1-para-muitos (listas).
     """
     images_to_show = set()
     text_lower = response_text.lower()
     
-    for keyword, path in IMAGE_MAP.items():
-        # Usamos regex com \b para encontrar palavras inteiras
+    for keyword, path_or_list in IMAGE_MAP.items():
+        # Verifica se a palavra-chave está no texto
         if re.search(r'\b' + re.escape(keyword) + r'\b', text_lower, re.IGNORECASE):
-            images_to_show.add(path)
             
+            # Se o valor for uma lista (caso do "mapeamento"), adiciona todos os itens
+            if isinstance(path_or_list, list):
+                for path in path_or_list:
+                    images_to_show.add(path)
+            # Se for uma string única, adiciona direto
+            else:
+                images_to_show.add(path_or_list)
+            
+    # Retorna como lista para o Streamlit renderizar
     return list(images_to_show)
 
 def run_ai(user_prompt):
