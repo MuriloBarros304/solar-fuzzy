@@ -43,10 +43,12 @@ def find_images_in_response(response_text):
             # Se o valor for uma lista (caso do "mapeamento"), adiciona todos os itens
             if isinstance(path_or_list, list):
                 for path in path_or_list:
-                    images_to_show.add(path)
+                    if os.path.exists(path):
+                        images_to_show.add(path)
             # Se for uma string única, adiciona direto
             else:
-                images_to_show.add(path_or_list)
+                if os.path.exists(path_or_list):
+                    images_to_show.add(path_or_list)
             
     # Retorna como lista para o Streamlit renderizar
     return list(images_to_show)
@@ -80,7 +82,7 @@ def run_ai(user_prompt):
     
     Com base estritamente no contexto fornecido, responda à pergunta do usuário.
     Se a resposta exigir a visualização de um gráfico, mencione palavras-chave
-    como 'comparação', 'dispersão', 'importância', ou 'predição diária'
+    como 'comparação', 'dispersão', 'barras', 'inputs', 'saída' ou 'mapeamento'
     em sua resposta para que a imagem correta possa ser exibida.
     """
     

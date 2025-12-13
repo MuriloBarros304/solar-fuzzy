@@ -33,8 +33,8 @@ def plot_variable(variable, input_val=None, title=""):
     return fig
 
 # --- TÍTULO ---
-st.title("☀️ Dashboard de Avaliação: Irradiação Solar RN")
-st.markdown("Comparativo de Lógica Fuzzy (Mamdani vs Sugeno) e Assistente de IA.")
+st.title("☀️ Sistema Fuzzy de Irradiação Solar RN")
+st.markdown("Comparativo de Lógica Fuzzy (Mamdani vs Sugeno vs Machine Learning) e Assistente de IA.")
 
 # --- ABAS ---
 tab_chat, tab_manual = st.tabs([
